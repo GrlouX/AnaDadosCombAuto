@@ -1,0 +1,177 @@
+---
+title: Relatório de Análise dos Preços dos Combustíveis no Brasil (período compreendido entre 2014 e 2020)
+author: "Graciliano Márcio Santos Louredo"
+date: "31/12/2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+## Introdução
+
+O objetivo desta análise de dados é investigar a evolução histórica dos preços de combustíveis no Brasil, disponíveis nos dados abertos da Agência Nacional do Petróleo, Gás natural e Biocombustíveis (ANP) em [Preços de Combustíveis por Revenda](https://dados.gov.br/dataset/serie-historica-de-precos-de-combustiveis-por-revenda).
+
+Neste conjunto de dados, foi escolhido o período de 2014 a 2020 para análise, a fim de considerar tendências anteriores e posteriores à penúltima alteração significativa na política de preços de combustíveis (em vigor desde julho/2017).
+
+```{r Bib_dados, message=FALSE}
+library(sqldf) # Manipulação de dados com linguagem SQL
+library(ggplot2) # Visualização gráfica
+library(gridExtra) # Exibição de múltiplos gráficos na tela
+library(tibble) # Visualização de tabelas
+load('var-prep_cabr.RData') # Carga do conjunto de dados salvos e preparados
+load('var-query_cabr.RData') # Carregamento das funções para consultas SQL 
+```
+
+## Resultados da Análise
+
+
+1) Qual o sumário estatístico descritivo (média, desvio padrão, máximo e mínimo) dos preços de venda de cada combustível em geral?
+
+```{r Res_query_1, message=FALSE, echo=TRUE}
+Q1 <- SumEstCateg("Produto") 
+
+plt1 <- ggplot(Q1,aes(Q1$Produto, Q1$Media_Venda, colour=Q1$Produto)) +
+  ggtitle("Sumário descritivo dos combustíveis") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_point(aes(Q1$Produto, Q1$Media_Venda)) +
+  geom_errorbar(aes(ymin = Q1$Media_Venda - Q1$DesvPad_Venda, 
+                    ymax = Q1$Media_Venda + Q1$DesvPad_Venda)) +
+  geom_linerange(aes(ymin = Q1$Min_Venda, ymax = Q1$Max_Venda)) +
+  xlab("Produtos") + ylab("Preço médio de Venda") +
+  guides(color="none")
+suppressWarnings(print(plt1))
+```
+
+A análise do comportamento dos preços por categoria de combustível revela que a variabilidade em torno da respectiva média, expressa pela faixa de erro central em cada categoria, foi relativamente parecida  para todos os combustíveis. Por outro lado, a amplitude total da variação em todo o período pesquisado, dada pelo comprimento das linhas verticais, evidenciou uma oscilação maior de preços especialmente na <b>gasolina</b> e no <b>etanol</b>.      
+
+<br>
+
+2) Qual a sumarização descritiva dos preços de venda do etanol, da gasolina e do diesel por ano?
+
+```{r Res_query_2, message=FALSE, echo=TRUE}
+Q2 <- SumEstCombAn(c("GASOLINA","DIESEL","ETANOL")) 
+
+Q2_1 <- Q2[1:7, ]
+plt2 <- ggplot(Q2_1, aes(Q2_1$Ano_da_Coleta, Q2_1$Media_Venda,
+                           colour = Q2_1$Ano_da_Coleta)) +
+  ggtitle("Sumário anual do diesel") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_point(aes(Q2_1$Ano_da_Coleta, Q2_1$Media_Venda)) +
+  geom_errorbar(aes(ymin = Q2_1$Media_Venda - Q2_1$DesvPad_Venda, 
+                    ymax = Q2_1$Media_Venda + Q2_1$DesvPad_Venda)) +
+  geom_linerange(aes(ymin = Q2_1$Min_Venda, ymax = Q2_1$Max_Venda)) +
+  xlab("Anos") + ylab("Preço médio de Venda") + ylim(0.5,6.5) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  guides(color="none")
+Q2_2 <- Q2[8:14, ]
+plt3 <- ggplot(Q2_2, aes(Q2_2$Ano_da_Coleta, Q2_2$Media_Venda,
+                           colour = Q2_2$Ano_da_Coleta)) +
+  ggtitle("Sumário anual do etanol") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_point(aes(Q2_2$Ano_da_Coleta, Q2_2$Media_Venda)) +
+  geom_errorbar(aes(ymin = Q2_2$Media_Venda - Q2_2$DesvPad_Venda, 
+                    ymax = Q2_2$Media_Venda + Q2_2$DesvPad_Venda)) +
+  geom_linerange(aes(ymin = Q2_2$Min_Venda, ymax = Q2_2$Max_Venda)) +
+  xlab("Anos") + ylab("Preço médio de Venda") + ylim(0.5,6.5) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  guides(color="none")
+Q2_3 <- Q2[15:21, ]
+plt4 <- ggplot(Q2_3, aes(Q2_3$Ano_da_Coleta, Q2_3$Media_Venda,
+                           colour = Q2_3$Ano_da_Coleta)) +
+  ggtitle("Sumário anual da gasolina") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_point(aes(Q2_3$Ano_da_Coleta, Q2_3$Media_Venda)) +
+  geom_errorbar(aes(ymin = Q2_3$Media_Venda - Q2_3$DesvPad_Venda, 
+                    ymax = Q2_3$Media_Venda + Q2_3$DesvPad_Venda)) +
+  geom_linerange(aes(ymin = Q2_3$Min_Venda, ymax = Q2_3$Max_Venda)) +
+  xlab("Anos") + ylab("Preço médio de Venda") + ylim(0.5,6.5) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  guides(color="none")
+suppressWarnings(print(grid.arrange(plt2, plt3, plt4, nrow = 1)))
+```
+
+O comparativo dos três combustíveis em questão mostra em geral uma tendência similar de aumento dos preços de venda (nominais) entre 2014 e 2019, com queda em 2020. Dentre eles, a <b>gasolina</b> teve uma variação de preços anual mais acentuada.
+
+<br>
+
+3) Para o combustível dentre os três anteriores com variação de preços mais acentuada em geral, qual região do país teve a maior taxa geral de aumento do preço de venda ao longo do período considerado?
+
+```{r Res_query_3, message=FALSE, echo=TRUE}
+Q3 <- TotAumComb("GASOLINA")
+
+plt5 <- ggplot(Q3, aes(Q3$Ano_da_Coleta, Q3$Ind, 
+                    group = Q3$Regiao_Sigla, col = Q3$Regiao_Sigla)) + 
+        ggtitle("Índice de aumento do preço da gasolina por ano e região") +
+        theme(plot.title = element_text(hjust = 0.5)) +
+        geom_point(aes(Q3$Ano_da_Coleta, Q3$Ind)) + 
+        geom_line(aes(Q3$Ano_da_Coleta, Q3$Ind)) +
+  geom_line(aes(Q3$Ano_da_Coleta,mean(Q3$Ind[Q3$Regiao_Sigla=="CO"])),color=1) +
+  geom_line(aes(Q3$Ano_da_Coleta,mean(Q3$Ind[Q3$Regiao_Sigla=="N"])),color=2) +
+  geom_line(aes(Q3$Ano_da_Coleta,mean(Q3$Ind[Q3$Regiao_Sigla=="NE"])),color=3) +
+  geom_line(aes(Q3$Ano_da_Coleta,mean(Q3$Ind[Q3$Regiao_Sigla=="S"])),color=4) +
+  geom_line(aes(Q3$Ano_da_Coleta,mean(Q3$Ind[Q3$Regiao_Sigla=="SE"])),color=5) +
+        xlab("Anos") + ylab("Taxa de aumento") +
+        scale_colour_discrete("Região")
+suppressWarnings(print(plt5))
+```
+
+As linhas horizontais representam as médias dos índices de aumento dos preços de venda por região de cada ano em relação ao anterior entre 2014 e 2020. Dessa forma, observa-se que o <b>Nordeste</b> (NE) teve a maior taxa média de aumento anual do preço da gasolina no período considerado.
+
+<br>
+
+4) Para a região com maior taxa de aumento nos preços de venda do combustível, qual estado que teve a variação mais acentuada no preço médio de venda no período considerado?
+
+```{r Res_query_4, message=FALSE, echo=TRUE}
+Q4 <- VarAcumReg("GASOLINA","NE")
+
+tibble(`Estado` = Q4[ ,1], `Preço médio em 2014` = Q4[ ,2],
+       `Preço médio em 2020` = Q4[ ,3], `Aumento acumulado` = Q4[ ,4])
+```
+
+Ao observar a tabela acima, nota-se que o <b>Piauí</b> (PI) foi o estado nordestino com maior variação acumulada no preço da gasolina no período de 2014 a 2020.
+
+<br>
+
+5) Para o estado identificado no item anterior, quais foram os dois municípios com maior variação no preço de venda do combustível de modo geral em 2020? 
+
+```{r Res_query_5, message=FALSE, echo=TRUE}
+Q5 <- VarPrecEst("GASOLINA","PI","2020")
+
+tibble(`Município` = Q5[ ,1], `Preço médio` = Q5[ ,2],
+       `Desvio Padrão` = Q5[ ,3], `Coeficiente de Variação` = Q5[ ,4])
+```
+
+O coeficiente de variação é uma medida estatística que possibilita a comparação da variabilidade entre conjuntos de dados com médias distintas. Assim, com base nesse resultado expresso na tabela anterior, verifica-se que os municípios de <b>Picos</b> e <b>Piripiri</b> tiveram a maior variação geral no preço da gasolina entre 2014 e 2020 no estado do Piauí.
+
+<br>
+
+6) Para os municípios identificados no item anterior, quais foram as duas principais bandeiras das distribuidoras de gasolina em percentual de participação?
+
+```{r Res_query_6, message=FALSE, echo=TRUE}
+Q6 <- TotPartBand("GASOLINA",c("PICOS","PIRIPIRI"),"2020")
+
+plt6 <- ggplot(Q6, aes(x = "", y = Q6$Parte_bandeiras, fill = Q6$Bandeira)) +
+    ggtitle("Participação das distribuidoras em municípios do Piauí") +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    geom_bar(stat="identity", width=1) +
+    coord_polar("y", start=0) + 
+    geom_text(aes(y = cumsum(Q6$Parte_bandeiras) - 0.5 * Q6$Parte_bandeiras, label = Q6$Parte_bandeiras),
+        color = "black", size=4) +
+    xlab("") +
+    ylab("Percentual de participação") +
+    scale_fill_discrete("Bandeira")
+suppressWarnings(print(plt6))
+```
+
+De acordo com o gráfico de setores acima, pode-se afirmar que a bandeira com maior participação nos dois municípios piauienses é a <b>Petrobrás</b>. Embora os postos com <b>bandeira branca</b> tenham percentual de participação ligeiramente maior, eles podem receber combustíveis de qualquer distribuidora, inclusive da própria Petrobrás, já que não informam a marca.
+
+
+## Conclusão
+
+Diante dos resultados encontrados, é possível afirmar que algumas tendências passadas contribuíram em parte para o impacto sentido com o aumento recente dos preços dos combustíveis.
+
+Em <u>termos nacionais</u>, os combustíveis com maior alta de preços registrada em 2021, segundo [Notícias G1 ](https://g1.globo.com/economia/noticia/2021/11/10/disparada-de-precos-etanol-e-gasolina-estao-entre-principais-altas-em-12-meses-veja-50-itens-que-mais-subiram.ghtml) e [Notícias Biodieselbr ](https://www.biodieselbr.com/noticias/biocombustivel/negocio/gasolina-e-diesel-alcancam-maior-valor-real-em-20-anos-121121), já apresentavam oscilações maiores de preços entre 2014 e 2020. Além disso, a queda abrupta da atividade econômica em 2020 devido à pandemia de COVID-19, refletida na diminuição dos preços de venda dos combustíveis em geral, decerto fez com que os aumentos de preços em 2021 tivessem um impacto maior do que o normal, pelo fato de incidirem sobre uma base de preços menor.
+
+Já em <u>termos locais</u>, pode-se constatar que territórios brasileiros com menor renda e maior desigualdade vem sentindo mais o impacto do aumento de preços desde o período de 2014 a 2020. No exemplo analisado, observa-se ainda que grandes distribuidoras dominam o mercado nesses lugares, de maneira que os preços praticados por elas tendem a influenciar bastante os preços de venda ao consumidor final.  
+
+Por fim, cabe enfatizar que conclusões mais aprofundadas somente serão possíveis mediante uma <u>análise da série histórica de preços</u>, a qual deve levar em conta um <u>índice de correção monetária</u> para comparação na mesma base. Tal indicador (geralmente um índice de preços ao consumidor) deve ser escolhido de forma a minimizar o viés existente pelo fato de incluir, na sua própria composição, um percentual da variação de preços dos combustíveis.    
